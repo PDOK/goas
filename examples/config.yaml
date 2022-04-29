@@ -1,0 +1,63 @@
+base-resource: https://example.org/catalog/1.0/
+default: night
+additional-formats:
+  application/json+custom_style: custom_style
+styles:
+  - id: "night"
+    title: "Topographic night style"
+    description: "This topographic basemap style is designed to be used in situations with low ambient light. The style supports datasets based on the TDS 6.1 specification."
+    keywords:
+      - "basemap"
+      - "TDS"
+      - "TDS 6.1"
+      - "OGC API"
+    point-of-contact: "John Doe"
+    created: "2019-01-01T10:05:00Z"
+    updated: "2019-01-01T11:05:00Z"
+    license: "MIT"
+    scope: "style"
+    version: "1.0.0"
+    stylesheets:
+    - title: "Mapbox Style"
+      version: "8"
+      specification: "https://docs.mapbox.com/mapbox-gl-js/style-spec/"
+      native: true
+      link:
+        asset-filename: "mapbox-style.json"
+        href: "https://example.org/catalog/1.0/styles/night?f=mapbox"
+        rel: "stylesheet"
+        type: "application/vnd.mapbox.style+json"
+    - title: "OGC SLD"
+      version: "1.0"
+      native: false
+      link:
+        asset-filename: "ogc-sld.sld"
+        href: "https://example.org/catalog/1.0/styles/night?f=sld10"
+        rel: "stylesheet"
+        type: "application/vnd.ogc.sld+xml;version=1.0"
+    - title: "Custom Style"
+      native: true
+      link:
+        asset-filename: "custom.style"
+        href: "https://example.org/catalog/1.0/styles/night?f=custom_style"
+        rel: "stylesheet"
+        type: "application/json+custom_style"
+    layers:
+    - id: "VegetationSrf"
+      type: "polygons"
+      sample-data:
+        href: "https://demo.ldproxy.net/daraa/collections/VegetationSrf/items?f=json&limit=100"
+        rel: "start"
+        type: "application/geo+json"
+    - id: "hydrographycrv"
+      type: "lines"
+      sample-data:
+        href: "https://services.interactive-instruments.de/vtp/daraa/collections/hydrographycrv/items?f=json&limit=100"
+        rel: "start"
+        type: "application/geo+json"
+      properties-schema:  # TODO implement later
+    links:
+      - rel: "preview"
+        type: "image/png"
+        title: "thumbnail of the night style applied to OSM data from Daraa, Syria"
+        asset-filename: "thumbnail.png"

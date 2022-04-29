@@ -1,0 +1,1 @@
+<root href="{{ .BaseResource }}">SLD</root>

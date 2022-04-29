@@ -1,0 +1,4 @@
+base-resource: https://example.org/catalog/1.0/
+styles:
+  - id: "night"
+    title: "Topographic night style"
