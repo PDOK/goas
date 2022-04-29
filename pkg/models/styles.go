@@ -62,6 +62,18 @@ func (link Link) WithOtherRelation(otherRelation LinkRelation) *Link {
 	return &link
 }
 
+func (link Link) ToPath(identifier string, additionalFormats map[MediaType]Format) (string, error) {
+	path, err := link.Rel.ToPath(identifier)
+	if err != nil {
+		return "", err
+	}
+	extension := link.Type.ToFormat(additionalFormats, false)
+	if extension != "" {
+		path = fmt.Sprintf("%s.%s", path, extension)
+	}
+	return path, nil
+}
+
 func (link *Link) UpdateHref(baseResource string, styleId string, additionalFormats map[MediaType]Format) error {
 	url, err := link.Rel.ToUrl(baseResource, styleId)
 	if err != nil {
