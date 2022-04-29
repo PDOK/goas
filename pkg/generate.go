@@ -3,12 +3,13 @@ package pkg
 import (
 	"bytes"
 	"fmt"
-	"github.com/pdok/goas/pkg/models"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"strings"
 	"text/template"
+
+	"github.com/pdok/goas/pkg/models"
+	"gopkg.in/yaml.v2"
 )
 
 const documentChanSize = 5
@@ -154,6 +155,10 @@ func generateAssetFromLinkRelation(link models.Link, styleId string, assetDir st
 			identifier = *link.AssetFilename
 		}
 		path, err := link.Rel.ToPath(identifier)
+
+		if err != nil {
+			return nil, err
+		}
 		return &models.Document{Path: path, MediaType: *link.Type, Content: &contentBuffer, Error: nil}, nil
 	default:
 		log.Printf("not generating asset for link with relation %s, with href %s", link.Rel, *link.Href)

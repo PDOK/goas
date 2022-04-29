@@ -2,10 +2,11 @@ package pkg
 
 import (
 	"bytes"
-	"github.com/pdok/goas/pkg/models"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/pdok/goas/pkg/models"
+	"github.com/stretchr/testify/require"
 )
 
 var whiteSpace = []string{"\n", "\t", " "}
