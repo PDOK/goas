@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/pdok/goas/pkg"
+	"github.com/pdok/goas/pkg/models"
 	"log"
 	"os"
 	"path/filepath"
 )
 
 type Writer interface {
-	Write(filename string, buffer *bytes.Buffer, mediaType pkg.MediaType, additionalFormats map[pkg.MediaType]pkg.Format) error
+	Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType, additionalFormats map[models.MediaType]models.Format) error
 }
 
 type MinioWriter struct {
@@ -28,7 +28,7 @@ type FileWriter struct {
 	FileDestination string
 }
 
-func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType pkg.MediaType, _ map[pkg.MediaType]pkg.Format) error {
+func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType, _ map[models.MediaType]models.Format) error {
 	key := m.s3Prefix + filename
 	var opts minio.PutObjectOptions
 	if mediaType == "" {
@@ -55,7 +55,7 @@ func (f FileWriter) makeDirIfNotExists(path string) error {
 	return nil
 }
 
-func (f FileWriter) Write(path string, buffer *bytes.Buffer, mediaType pkg.MediaType, additionalFormats map[pkg.MediaType]pkg.Format) error {
+func (f FileWriter) Write(path string, buffer *bytes.Buffer, mediaType models.MediaType, additionalFormats map[models.MediaType]models.Format) error {
 	extension := mediaType.ToFormat(additionalFormats, false)
 	if extension != "" {
 		path = fmt.Sprintf("%s.%s", path, extension)

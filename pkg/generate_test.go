@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"github.com/pdok/goas/pkg/models"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -27,8 +28,8 @@ func TestParseConfig(t *testing.T) {
 
 func TestGenerateDocuments(t *testing.T) {
 	config, _ := ParseConfig("../examples/config.yaml")
-	documents := GenerateDocuments(config, "../examples/assets", []Format{JsonFormat})
-	expectedDocuments := []Document{
+	documents := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
+	expectedDocuments := []models.Document{
 		{
 			"resources/thumbnail.png",
 			"image/png",
@@ -194,8 +195,8 @@ func TestGenerateDocuments(t *testing.T) {
 
 func TestGenerateDocumentsMinimalConfig(t *testing.T) {
 	config, _ := ParseConfig("../examples/minimal_config.yaml")
-	documents := GenerateDocuments(config, "../examples/assets", []Format{JsonFormat})
-	expectedDocuments := []Document{
+	documents := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
+	expectedDocuments := []models.Document{
 		{
 			"styles/night/metadata",
 			"application/json",

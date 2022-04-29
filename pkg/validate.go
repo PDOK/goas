@@ -2,10 +2,11 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/pdok/goas/pkg/models"
 	"strings"
 )
 
-func ValidateOGCStyles(ogcStyles *OGCStyles) error {
+func ValidateOGCStyles(ogcStyles *models.OGCStyles) error {
 	var errors []string
 	err := validateUniqueStyles(ogcStyles)
 	if err != nil {
@@ -29,7 +30,7 @@ func ValidateOGCStyles(ogcStyles *OGCStyles) error {
 }
 
 // validateUniqueStyles Requirement 3D: The id member of each style SHALL be unique.
-func validateUniqueStyles(ogcStyles *OGCStyles) error {
+func validateUniqueStyles(ogcStyles *models.OGCStyles) error {
 	var duplicateIds []string
 	styleSet := make(map[string]bool)
 	for _, metadata := range ogcStyles.StylesMetadata {
@@ -47,9 +48,9 @@ func validateUniqueStyles(ogcStyles *OGCStyles) error {
 }
 
 // validateStyleEncoding Requirement 3E: Each style SHALL have at least one link to a style encoding supported for the style (link relation type: stylesheet) with the type attribute stating the media type of the style encoding.
-func validateStyleEncoding(metadata StyleMetadata) error {
+func validateStyleEncoding(metadata models.StyleMetadata) error {
 	for _, style := range metadata.Stylesheets {
-		if style.Link.Rel == StylesheetRelation && style.Link.Type != nil {
+		if style.Link.Rel == models.StylesheetRelation && style.Link.Type != nil {
 			return nil
 		}
 	}
@@ -57,7 +58,7 @@ func validateStyleEncoding(metadata StyleMetadata) error {
 }
 
 // validateDefaultStyle Requirement 3G: The default member SHALL, if provided, be the id of one of the styles in the styles array.
-func validateDefaultStyle(ogcStyles *OGCStyles) error {
+func validateDefaultStyle(ogcStyles *models.OGCStyles) error {
 	for _, metadata := range ogcStyles.StylesMetadata {
 		if metadata.Id == ogcStyles.Default {
 			return nil
