@@ -2,9 +2,10 @@ package pkg
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var whiteSpace = []string{"\n", "\t", " "}

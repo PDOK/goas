@@ -3,11 +3,12 @@ package pkg
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"strings"
 	"text/template"
+
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -145,6 +146,9 @@ func generateAssetFromLinkRelation(link Link, styleId string, assetDir string, o
 			identifier = *link.AssetFilename
 		}
 		path, err := link.Rel.ToPath(identifier)
+		if err != nil {
+			return nil, err
+		}
 		return &Document{path, *link.Type, &contentBuffer, nil}, nil
 	default:
 		log.Printf("not generating asset for link with relation %s, with href %s", link.Rel, *link.Href)
