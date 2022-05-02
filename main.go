@@ -92,7 +92,7 @@ func generate(ctx *util.Context) error {
 
 	for document := range documents {
 		if document.Error != nil { // TODO: not sure about this pattern, perhaps just implement Fatal logging; think about: https://stackoverflow.com/a/33890104
-			return err
+			return document.Error
 		}
 		err := ctx.Writer.Write(document.Path, document.Content, document.MediaType, config.AdditionalFormats)
 		if err != nil {
