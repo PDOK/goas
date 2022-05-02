@@ -112,7 +112,7 @@ const (
 	JsonFormat   Format = "json"
 	HtmlFormat   Format = "html"
 	SldFormat    Format = "sld"
-	MapboxFormat Format = "mapbox"
+	MapboxFormat Format = "mapbox.json"
 
 	mediaTypeSeperator     = ";"
 	mediaTypePartSeperator = "="

@@ -37,7 +37,7 @@ func TestGenerateDocuments(t *testing.T) {
 			bytes.NewBuffer([]byte("")),
 			nil},
 		{
-			"styles/night.mapbox",
+			"styles/night.mapbox.json",
 			"application/vnd.mapbox.style+json",
 			bytes.NewBuffer([]byte( //language=json
 				`{"MAPBOX_STYLE": "https://example.org/catalog/1.0"}`)),
@@ -81,7 +81,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "specification": "https://docs.mapbox.com/mapbox-gl-js/style-spec/",
 					  "native": true,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night?f=mapbox",
+						"href": "https://example.org/catalog/1.0/styles/night?f=mapbox.json",
 						"rel": "stylesheet",
 						"type": "application/vnd.mapbox.style+json"
 					  }
@@ -165,7 +165,7 @@ func TestGenerateDocuments(t *testing.T) {
 						  "title": "Style Metadata for night"
 						},
 						{
-						  "href": "https://example.org/catalog/1.0/styles/night?f=mapbox",
+						  "href": "https://example.org/catalog/1.0/styles/night?f=mapbox.json",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.mapbox.style+json"
 						},
