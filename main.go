@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/pdok/goas/pkg/models"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -49,7 +50,7 @@ func main() {
 			Name:        "formats",
 			Usage:       "(stub) comma seperated list of rendered formats. Choose from: [json,]",
 			EnvVars:     []string{"API_FORMATS"},
-			DefaultText: string(pkg.JsonFormat),
+			DefaultText: string(models.JsonFormat),
 		},
 	}
 	app.ArgsUsage = "[arguments]\n\nARGUMENTS:\n  [ASSET_DIR]: path that points to directory where the assets (styles, thumbnails) are provided\n  [CONFIG]: path to the configuration.yaml for the style generation"

@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"github.com/pdok/goas/pkg/models"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -18,10 +19,10 @@ func TestRenderJson(t *testing.T) {
 	path := "."
 	expected := "{\"nested\":{\"test\":\"test\"}}\n"
 
-	result, err := Render(obj, path, JsonFormat)
+	result, err := Render(obj, path, models.JsonFormat)
 
 	require.Nil(t, err)
-	require.Equal(t, JsonMediaType, result.MediaType)
+	require.Equal(t, models.JsonMediaType, result.MediaType)
 	require.Equal(t, expected, result.Content.String())
 	require.Equal(t, result.Path, path)
 }

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pdok/goas/pkg/models"
 )
 
-type Renderer func(obj interface{}, path string) (*Document, error)
+type Renderer func(obj interface{}, path string) (*models.Document, error)
 
-func Render(obj interface{}, path string, format Format) (*Document, error) {
+func Render(obj interface{}, path string, format models.Format) (*models.Document, error) {
 	renderer, err := getRenderer(format)
 	if err != nil {
 		return nil, err
@@ -20,16 +21,16 @@ func Render(obj interface{}, path string, format Format) (*Document, error) {
 	return document, nil
 }
 
-func getRenderer(format Format) (Renderer, error) {
+func getRenderer(format models.Format) (Renderer, error) {
 	switch format {
-	case JsonFormat:
+	case models.JsonFormat:
 		return jsonRenderer, nil
 	default:
 		return nil, fmt.Errorf("format: %v not implemented", format)
 	}
 }
 
-func jsonRenderer(obj interface{}, path string) (*Document, error) {
+func jsonRenderer(obj interface{}, path string) (*models.Document, error) {
 	content := new(bytes.Buffer)
 	enc := json.NewEncoder(content)
 	enc.SetEscapeHTML(false)
@@ -37,5 +38,5 @@ func jsonRenderer(obj interface{}, path string) (*Document, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, could not render document to file", err)
 	}
-	return &Document{path, JsonMediaType, content, nil}, nil
+	return &models.Document{Path: path, MediaType: models.JsonMediaType, Content: content, Error: nil}, nil
 }

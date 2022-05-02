@@ -1,11 +1,12 @@
 package pkg
 
 import (
+	"github.com/pdok/goas/pkg/models"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func ValidOGCStyles() *OGCStyles {
+func ValidOGCStyles() *models.OGCStyles {
 	config, _ := ParseConfig("../examples/config.yaml")
 	return config
 }
@@ -28,7 +29,7 @@ func TestValidateDuplicateStyles(t *testing.T) {
 func TestValidateWrongStyleRelation(t *testing.T) {
 	ogcStyles := ValidOGCStyles()
 	expected := "validation errors found: requirement 3E fails; style night stylesheet definition incorrect"
-	ogcStyles.StylesMetadata[0].Stylesheets = []StyleSheet{{Link: Link{Rel: SelfRelation}}}
+	ogcStyles.StylesMetadata[0].Stylesheets = []models.StyleSheet{{Link: models.Link{Rel: models.SelfRelation}}}
 	err := ValidateOGCStyles(ogcStyles)
 	require.NotNil(t, err)
 	require.Equal(t, expected, err.Error())

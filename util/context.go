@@ -2,7 +2,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/pdok/goas/pkg"
+	"github.com/pdok/goas/pkg/models"
 	"github.com/urfave/cli/v2"
 	"strings"
 )
@@ -11,10 +11,10 @@ type Context struct {
 	Writer     Writer
 	AssetDir   string
 	ConfigPath string
-	Formats    []pkg.Format
+	Formats    []models.Format
 }
 
-var DefaultFormats = []pkg.Format{pkg.JsonFormat}
+var DefaultFormats = []models.Format{models.JsonFormat}
 
 func CreateContext(c *cli.Context) (*Context, error) {
 	s3Endpoint := c.String("s3-endpoint")
@@ -32,10 +32,10 @@ func CreateContext(c *cli.Context) (*Context, error) {
 		return nil, fmt.Errorf("expect ASSET_DIR and CONFIG_PATH as arguments")
 	}
 
-	var formats []pkg.Format
+	var formats []models.Format
 	for _, format := range strings.Split(c.String("formats"), ",") {
 		if format != "" {
-			formats = append(formats, pkg.Format(format))
+			formats = append(formats, models.Format(format))
 		}
 	}
 	if formats == nil {

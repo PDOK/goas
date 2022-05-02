@@ -8,20 +8,14 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/pdok/goas/pkg/models"
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	stylesResource        = "styles"
-	styleResource         = "styles/%s"
-	styleMetadataResource = "styles/%s/metadata"
-	stylesPreviewResource = "resources/%s" // this is not clearly specified in the OGC API Styles spec, taken from the examples
+const documentChanSize = 5
 
-	documentChanSize = 10
-)
-
-func ParseConfig(configPath string) (*OGCStyles, error) {
-	var config OGCStyles
+func ParseConfig(configPath string) (*models.OGCStyles, error) {
+	var config models.OGCStyles
 	content, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, could not read config file: %v", err, configPath)
@@ -34,96 +28,111 @@ func ParseConfig(configPath string) (*OGCStyles, error) {
 	return &config, nil
 }
 
-func GenerateDocuments(ogcStyles *OGCStyles, assetDir string, formats []Format) chan *Document {
-	documents := make(Documents, documentChanSize)
+func GenerateDocuments(ogcStyles *models.OGCStyles, assetDir string, formats []models.Format) chan *models.Document {
+	documents := make(models.Documents, documentChanSize)
 	go func() {
 		defer close(documents)
-		styles := Styles{Default: ogcStyles.Default}
+		styles := models.Styles{Default: ogcStyles.Default}
 		for _, styleMetadata := range ogcStyles.StylesMetadata {
 			hasSelf := false
-			var stylesLinks []Link
+			var stylesLinks []models.Link
 			for i := range styleMetadata.Links {
-				styleMetadataLink := &styleMetadata.Links[i]
-				err := styleMetadataLink.UpdateHref(ogcStyles.BaseResource, styleMetadata.Id, ogcStyles.AdditionalFormats)
-				if err != nil {
-					documents.HandleError(fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, ogcStyles.BaseResource, styleMetadata.Id))
+				document, link, isSelf, err := generateStyleMetadata(&styleMetadata.Links[i], styleMetadata.Id, assetDir, ogcStyles)
+				ok := documents.Add(document, err)
+				if !ok {
 					return
 				}
-				if styleMetadataLink.Rel == StylesheetRelation {
-					log.Printf("warning: stylesheet link found in metadata links %s", *styleMetadataLink.Href)
-					continue
-				} else if styleMetadataLink.Rel != SelfRelation {
-					document, err := generateAssetFromLinkRelation(*styleMetadataLink, styleMetadata.Id, assetDir, ogcStyles)
-					if err != nil {
-						documents.HandleError(fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, ogcStyles.BaseResource, styleMetadata.Id))
-						return
-					} else if document != nil {
-						documents <- document
-					}
-					// OGC API Styles Requirement 3I - If a thumbnail is available for a style in the style metadata (see recommendation /rec/core/style-md-preview), a link with the link relation type preview SHALL also be provided in the Styles resource.
-					stylesLinks = append(stylesLinks, *styleMetadataLink)
-				} else {
-					hasSelf = true
-					stylesLinks = append(stylesLinks, styleMetadataLink.WithOtherRelation(DescribedbyRelation))
-				}
+				stylesLinks = append(stylesLinks, *link)
+				hasSelf = hasSelf || isSelf
 			}
 
 			if !hasSelf {
-				title := fmt.Sprintf("Style Metadata for %s", styleMetadata.Id)
-				selfMetadataLink := Link{
-					Title: &title,
-					Rel:   SelfRelation,
-					Href:  DescribedbyRelation.MustToUrl(ogcStyles.BaseResource, styleMetadata.Id),
-				}
-				styleMetadata.Links = append(styleMetadata.Links, selfMetadataLink)
+				selfMetadataLink := generateMetadataLink(styleMetadata.Id, ogcStyles)
+				styleMetadata.Links = append(styleMetadata.Links, *selfMetadataLink)
 				// OGC API Styles Requirement 3F Each style SHALL have a link to the style metadata (link relation type: describedby) with the type attribute stating the media type of the metadata encoding.
-				stylesLinks = append(stylesLinks, selfMetadataLink.WithOtherRelation(DescribedbyRelation))
+				stylesLinks = append(stylesLinks, *selfMetadataLink.WithOtherRelation(models.DescribedbyRelation))
 			}
 			for i := range styleMetadata.Stylesheets {
-				stylesheetLink := &styleMetadata.Stylesheets[i].Link
-				err := stylesheetLink.UpdateHref(ogcStyles.BaseResource, styleMetadata.Id, ogcStyles.AdditionalFormats)
-				if err != nil {
-					documents.HandleError(fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, ogcStyles.BaseResource, styleMetadata.Id))
+				document, err := generateStylesheet(&styleMetadata.Stylesheets[i].Link, styleMetadata.Id, assetDir, ogcStyles)
+				ok := documents.Add(document, err)
+				if !ok {
 					return
 				}
-				document, err := generateAssetFromLinkRelation(*stylesheetLink, styleMetadata.Id, assetDir, ogcStyles)
 				// OGC API Styles Requirement 3C - The styles member SHALL include one item for each style currently on the server.
-				// OGC API Styles Requirement 3E - Each style SHALL have at least one link to a style encoding supported for the style (link relation type: stylesheet) with the type attribute stating the media type of the style encoding.
-				// OGC API Styles Requirement 3H - If a http://www.opengis.net/def/rel/ogc/1.0/schema link to a URI for the schema of the data is available for a style in the style metadata (see recommendation /rec/core/style-md-schema), a link with the same link relation type SHALL also be provided in the Styles resource.
-				if err != nil {
-					documents.HandleError(fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, ogcStyles.BaseResource, styleMetadata.Id))
-					return
-				} else if document != nil {
-					documents <- document
-				}
-				stylesLinks = append(stylesLinks, *stylesheetLink)
+				stylesLinks = append(stylesLinks, styleMetadata.Stylesheets[i].Link)
 			}
 
-			styles.Styles = append(styles.Styles, Style{styleMetadata.Id, *styleMetadata.Title, stylesLinks})
+			styles.Styles = append(styles.Styles, models.Style{
+				Id: styleMetadata.Id, Title: *styleMetadata.Title, Links: stylesLinks,
+			})
 			for _, format := range formats {
-				document, err := Render(styleMetadata, DescribedbyRelation.MustToPath(styleMetadata.Id), format)
-				if err != nil {
-					documents.HandleError(err)
+				document, err := Render(styleMetadata, models.DescribedbyRelation.MustToPath(styleMetadata.Id), format)
+				ok := documents.Add(document, err)
+				if !ok {
 					return
 				}
-				documents <- document
 			}
 		}
 		for _, format := range formats {
-			document, err := Render(styles, stylesResource, format)
-			if err != nil {
-				documents.HandleError(err)
+			document, err := Render(styles, models.StylesResource, format)
+			ok := documents.Add(document, err)
+			if !ok {
 				return
 			}
-			documents <- document
 		}
 	}()
 	return documents
 }
 
-func generateAssetFromLinkRelation(link Link, styleId string, assetDir string, ogcStyles *OGCStyles) (*Document, error) {
+func generateStyleMetadata(styleMetadataLink *models.Link, metadataId string, assetDir string, styles *models.OGCStyles) (document *models.Document, link *models.Link, hasSelf bool, err error) {
+	err = styleMetadataLink.UpdateHref(styles.BaseResource, metadataId, styles.AdditionalFormats)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, styles.BaseResource, metadataId)
+	}
+	if styleMetadataLink.Rel == models.StylesheetRelation {
+		log.Printf("warning: stylesheet link found in metadata links %s", *styleMetadataLink.Href)
+		return nil, nil, false, nil
+	} else if styleMetadataLink.Rel != models.SelfRelation {
+		document, err = generateAssetFromLinkRelation(*styleMetadataLink, metadataId, assetDir, styles)
+		if err != nil {
+			return nil, nil, false, fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, styles.BaseResource, metadataId)
+		}
+		// OGC API Styles Requirement 3I - If a thumbnail is available for a style in the style metadata (see recommendation /rec/core/style-md-preview), a link with the link relation type preview SHALL also be provided in the Styles resource.
+		link = styleMetadataLink
+	} else {
+		hasSelf = true
+		link = styleMetadataLink.WithOtherRelation(models.DescribedbyRelation)
+	}
+	return document, link, hasSelf, nil
+}
+
+func generateStylesheet(stylesheetLink *models.Link, metadataId string, assetDir string, styles *models.OGCStyles) (document *models.Document, err error) {
+	err = stylesheetLink.UpdateHref(styles.BaseResource, metadataId, styles.AdditionalFormats)
+	if err != nil {
+		return nil, fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, styles.BaseResource, metadataId)
+	}
+	document, err = generateAssetFromLinkRelation(*stylesheetLink, metadataId, assetDir, styles)
+	// OGC API Styles Requirement 3E - Each style SHALL have at least one link to a style encoding supported for the style (link relation type: stylesheet) with the type attribute stating the media type of the style encoding.
+	// OGC API Styles Requirement 3H - If a http://www.opengis.net/def/rel/ogc/1.0/schema link to a URI for the schema of the data is available for a style in the style metadata (see recommendation /rec/core/style-md-schema), a link with the same link relation type SHALL also be provided in the Styles resource.
+	if err != nil {
+		return nil, fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, styles.BaseResource, metadataId)
+	}
+	return document, nil
+}
+
+func generateMetadataLink(metadataId string, styles *models.OGCStyles) *models.Link {
+	title := fmt.Sprintf("Style Metadata for %s", metadataId)
+	selfMetadataLink := models.Link{
+		Title: &title,
+		Rel:   models.SelfRelation,
+		Href:  models.DescribedbyRelation.MustToUrl(styles.BaseResource, metadataId),
+	}
+	return &selfMetadataLink
+}
+
+func generateAssetFromLinkRelation(link models.Link, styleId string, assetDir string, ogcStyles *models.OGCStyles) (*models.Document, error) {
 	switch link.Rel {
-	case StylesheetRelation, PreviewRelation:
+	case models.StylesheetRelation, models.PreviewRelation:
 		if link.AssetFilename == nil {
 			return nil, fmt.Errorf("asset-filename not specified for stylesheet %s", *link.Href)
 		}
@@ -142,14 +151,15 @@ func generateAssetFromLinkRelation(link Link, styleId string, assetDir string, o
 		}
 
 		identifier := styleId
-		if link.Rel == PreviewRelation {
+		if link.Rel == models.PreviewRelation {
 			identifier = *link.AssetFilename
 		}
 		path, err := link.Rel.ToPath(identifier)
+
 		if err != nil {
 			return nil, err
 		}
-		return &Document{path, *link.Type, &contentBuffer, nil}, nil
+		return &models.Document{Path: path, MediaType: *link.Type, Content: &contentBuffer, Error: nil}, nil
 	default:
 		log.Printf("not generating asset for link with relation %s, with href %s", link.Rel, *link.Href)
 		return nil, nil
