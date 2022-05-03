@@ -19,7 +19,7 @@ var DefaultFormats = []models.Format{models.JsonFormat}
 func CreateContext(c *cli.Context) (*Context, error) {
 	s3Endpoint := c.String("s3-endpoint")
 	s3AccessKey := c.String("s3-access-key")
-	s3SecretKey := c.String("s3-secret-key")
+	s3SecretKey := c.String("s3-secret")
 	s3Bucket := c.String("s3-bucket")
 	s3Prefix := c.String("s3-prefix")
 	fileDestination := c.String("file-destination")

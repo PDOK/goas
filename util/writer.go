@@ -11,10 +11,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Writer interface {
-	Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType, additionalFormats map[models.MediaType]models.Format) error
+	Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType) error
 }
 
 type MinioWriter struct {
@@ -28,7 +29,7 @@ type FileWriter struct {
 	FileDestination string
 }
 
-func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType, _ map[models.MediaType]models.Format) error {
+func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType) error {
 	key := m.s3Prefix + filename
 	var opts minio.PutObjectOptions
 	if mediaType == "" {
@@ -55,11 +56,7 @@ func (f FileWriter) makeDirIfNotExists(path string) error {
 	return nil
 }
 
-func (f FileWriter) Write(path string, buffer *bytes.Buffer, mediaType models.MediaType, additionalFormats map[models.MediaType]models.Format) error {
-	extension := mediaType.ToFormat(additionalFormats, false)
-	if extension != "" {
-		path = fmt.Sprintf("%s.%s", path, extension)
-	}
+func (f FileWriter) Write(path string, buffer *bytes.Buffer, _ models.MediaType) error {
 	filename := filepath.Join(f.FileDestination, path)
 	err := f.makeDirIfNotExists(filename)
 	if err != nil {
@@ -108,6 +105,9 @@ func NewWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s3Buck
 	if isLocal {
 		writer = &FileWriter{fileDestination}
 	} else {
+		if !strings.HasSuffix(s3Prefix, "/") {
+			s3Prefix = s3Prefix + "/"
+		}
 		writer, err = newMinioWriter(s3Endpoint, s3AccessKey, s3SecretKey, s3Bucket, s3Prefix)
 		if err != nil {
 			return nil, err

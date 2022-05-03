@@ -94,7 +94,7 @@ func generate(ctx *util.Context) error {
 		if document.Error != nil { // TODO: not sure about this pattern, perhaps just implement Fatal logging; think about: https://stackoverflow.com/a/33890104
 			return document.Error
 		}
-		err := ctx.Writer.Write(document.Path, document.Content, document.MediaType, config.AdditionalFormats)
+		err := ctx.Writer.Write(document.Path, document.Content, document.MediaType)
 		if err != nil {
 			return err
 		}

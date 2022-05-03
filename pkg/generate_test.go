@@ -37,25 +37,25 @@ func TestGenerateDocuments(t *testing.T) {
 			bytes.NewBuffer([]byte("")),
 			nil},
 		{
-			"styles/night",
+			"styles/night.mapbox",
 			"application/vnd.mapbox.style+json",
 			bytes.NewBuffer([]byte( //language=json
 				`{"MAPBOX_STYLE": "https://example.org/catalog/1.0"}`)),
 			nil},
 		{
-			"styles/night",
+			"styles/night.sld",
 			"application/vnd.ogc.sld+xml;version=1.0",
 			bytes.NewBuffer([]byte( //language=xml
 				`<root href="https://example.org/catalog/1.0">SLD</root>`)),
 			nil},
 		{
-			"styles/night",
-			"application/json+custom_style",
+			"styles/night.custom",
+			"application/vnd.custom.style+json",
 			bytes.NewBuffer([]byte( //language=text
 				`Custom Style = https://example.org/catalog/1.0`)),
 			nil},
 		{
-			"styles/night/metadata",
+			"styles/night/metadata.json",
 			"application/json",
 			bytes.NewBuffer([]byte( //language=json
 				`{
@@ -100,9 +100,9 @@ func TestGenerateDocuments(t *testing.T) {
 					  "title": "Custom Style",
 					  "native": true,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night?f=custom_style",
+						"href": "https://example.org/catalog/1.0/styles/night?f=custom",
 						"rel": "stylesheet",
-						"type": "application/json+custom_style"
+						"type": "application/vnd.custom.style+json"
 					  }
 					}
 				  ],
@@ -143,7 +143,7 @@ func TestGenerateDocuments(t *testing.T) {
 			),
 			nil},
 		{
-			"styles",
+			"styles.json",
 			"application/json",
 			bytes.NewBuffer([]byte( //language=json
 				`{
@@ -175,9 +175,9 @@ func TestGenerateDocuments(t *testing.T) {
 						  "type": "application/vnd.ogc.sld+xml;version=1.0"
 						},
 						{	
-						  "href": "https://example.org/catalog/1.0/styles/night?f=custom_style",
+						  "href": "https://example.org/catalog/1.0/styles/night?f=custom",
 						  "rel": "stylesheet",
-						  "type": "application/json+custom_style"
+						  "type": "application/vnd.custom.style+json"
 						}
 					  ]
 					}
@@ -199,7 +199,7 @@ func TestGenerateDocumentsMinimalConfig(t *testing.T) {
 	documents := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
 	expectedDocuments := []models.Document{
 		{
-			"styles/night/metadata",
+			"styles/night/metadata.json",
 			"application/json",
 			bytes.NewBuffer([]byte( //language=json
 				`{
@@ -215,7 +215,7 @@ func TestGenerateDocumentsMinimalConfig(t *testing.T) {
 				}`)),
 			nil},
 		{
-			"styles",
+			"styles.json",
 			"application/json",
 			bytes.NewBuffer([]byte( //language=json
 				`{

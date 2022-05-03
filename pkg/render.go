@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pdok/goas/pkg/models"
+	"strings"
 )
 
 type Renderer func(obj interface{}, path string) (*models.Document, error)
 
 func Render(obj interface{}, path string, format models.Format) (*models.Document, error) {
+	if !strings.HasSuffix(path, string(format)) {
+		path = fmt.Sprintf("%s.%s", path, format)
+	}
 	renderer, err := getRenderer(format)
 	if err != nil {
 		return nil, err
