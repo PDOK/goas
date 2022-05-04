@@ -79,10 +79,10 @@ func (link *Link) UpdateHref(baseResource string, styleId string, additionalForm
 	if err != nil {
 		return err
 	}
-	formatParams := link.Type.ToFormat(additionalFormats, true).ToQuery()
-	if formatParams != "" {
-		urlWithFormatquery := fmt.Sprintf("%s%s%s", *url, queryParams, formatParams)
-		url = &urlWithFormatquery
+	format := link.Type.ToFormat(additionalFormats, true)
+	if format != "" {
+		urlWithFormatExtension := fmt.Sprintf("%s.%s", *url, format)
+		url = &urlWithFormatExtension
 	}
 	if link.Href != nil {
 		log.Printf("link href `%s` not empty, overwriting with: `%s`", *link.Href, *url)

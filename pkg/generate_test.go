@@ -81,7 +81,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "specification": "https://docs.mapbox.com/mapbox-gl-js/style-spec/",
 					  "native": true,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night?f=mapbox",
+						"href": "https://example.org/catalog/1.0/styles/night.mapbox",
 						"rel": "stylesheet",
 						"type": "application/vnd.mapbox.style+json"
 					  }
@@ -91,7 +91,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "version": "1.0",
 					  "native": false,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night?f=sld10",
+						"href": "https://example.org/catalog/1.0/styles/night.sld10",
 						"rel": "stylesheet",
 						"type": "application/vnd.ogc.sld+xml;version=1.0"
 					  }
@@ -100,7 +100,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "title": "Custom Style",
 					  "native": true,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night?f=custom",
+						"href": "https://example.org/catalog/1.0/styles/night.custom",
 						"rel": "stylesheet",
 						"type": "application/vnd.custom.style+json"
 					  }
@@ -165,17 +165,17 @@ func TestGenerateDocuments(t *testing.T) {
 						  "title": "Style Metadata for night"
 						},
 						{
-						  "href": "https://example.org/catalog/1.0/styles/night?f=mapbox",
+						  "href": "https://example.org/catalog/1.0/styles/night.mapbox",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.mapbox.style+json"
 						},
 						{
-						  "href": "https://example.org/catalog/1.0/styles/night?f=sld10",
+						  "href": "https://example.org/catalog/1.0/styles/night.sld10",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.ogc.sld+xml;version=1.0"
 						},
 						{	
-						  "href": "https://example.org/catalog/1.0/styles/night?f=custom",
+						  "href": "https://example.org/catalog/1.0/styles/night.custom",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.custom.style+json"
 						}
