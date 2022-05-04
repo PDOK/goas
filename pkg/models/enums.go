@@ -116,9 +116,6 @@ const (
 
 	mediaTypeSeperator     = ";"
 	mediaTypePartSeperator = "="
-
-	queryParams = "?"
-	formatQuery = "f=%s"
 )
 
 var knownFormats = map[MediaType]Format{
@@ -169,13 +166,6 @@ func (m MediaType) ToFormat(additionalFormats map[MediaType]Format, versioned bo
 		}
 	}
 	return format
-}
-
-func (format Format) ToQuery() string {
-	if format != "" {
-		return fmt.Sprintf(formatQuery, format)
-	}
-	return ""
 }
 
 type GeometryType string
