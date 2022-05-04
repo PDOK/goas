@@ -16,7 +16,7 @@ type NestedTestStruct struct {
 
 func TestRenderJson(t *testing.T) {
 	obj := TestStruct{NestedTestStruct{"test"}}
-	path := "."
+	path := "test.json"
 	expected := "{\"nested\":{\"test\":\"test\"}}\n"
 
 	result, err := Render(obj, path, models.JsonFormat)

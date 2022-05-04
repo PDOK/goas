@@ -1,7 +1,7 @@
 base-resource: https://example.org/catalog/1.0/
 default: night
 additional-formats:
-  application/json+custom_style: custom_style
+  application/vnd.custom.style+json: custom
 styles:
   - id: "night"
     title: "Topographic night style"
@@ -41,7 +41,7 @@ styles:
         asset-filename: "custom.style"
         href: "https://example.org/catalog/1.0/styles/night?f=custom_style"
         rel: "stylesheet"
-        type: "application/json+custom_style"
+        type: "application/vnd.custom.style+json"
     layers:
     - id: "VegetationSrf"
       type: "polygons"

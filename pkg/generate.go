@@ -34,8 +34,8 @@ func GenerateDocuments(ogcStyles *models.OGCStyles, assetDir string, formats []m
 		defer close(documents)
 		styles := models.Styles{Default: ogcStyles.Default}
 		for _, styleMetadata := range ogcStyles.StylesMetadata {
-			hasSelf := false
 			var stylesLinks []models.Link
+			var selfMetadataLink *models.Link
 			for i := range styleMetadata.Links {
 				document, link, isSelf, err := generateStyleMetadata(&styleMetadata.Links[i], styleMetadata.Id, assetDir, ogcStyles)
 				ok := documents.Add(document, err)
@@ -43,11 +43,13 @@ func GenerateDocuments(ogcStyles *models.OGCStyles, assetDir string, formats []m
 					return
 				}
 				stylesLinks = append(stylesLinks, *link)
-				hasSelf = hasSelf || isSelf
+				if isSelf {
+					selfMetadataLink = link
+				}
 			}
 
-			if !hasSelf {
-				selfMetadataLink := generateMetadataLink(styleMetadata.Id, ogcStyles)
+			if selfMetadataLink == nil {
+				selfMetadataLink = generateMetadataLink(styleMetadata.Id, ogcStyles)
 				styleMetadata.Links = append(styleMetadata.Links, *selfMetadataLink)
 				// OGC API Styles Requirement 3F Each style SHALL have a link to the style metadata (link relation type: describedby) with the type attribute stating the media type of the metadata encoding.
 				stylesLinks = append(stylesLinks, *selfMetadataLink.WithOtherRelation(models.DescribedbyRelation))
@@ -154,8 +156,7 @@ func generateAssetFromLinkRelation(link models.Link, styleId string, assetDir st
 		if link.Rel == models.PreviewRelation {
 			identifier = *link.AssetFilename
 		}
-		path, err := link.Rel.ToPath(identifier)
-
+		path, err := link.ToPath(identifier, ogcStyles.AdditionalFormats)
 		if err != nil {
 			return nil, err
 		}
