@@ -35,7 +35,10 @@ func CreateContext(c *cli.Context) (*Context, error) {
 	var formats []models.Format
 	for _, format := range strings.Split(c.String("formats"), ",") {
 		if format != "" {
-			formats = append(formats, models.Format(format))
+			f, ok := models.GetFormat(format)
+			if ok {
+				formats = append(formats, f)
+			}
 		}
 	}
 	if formats == nil {

@@ -1,7 +1,9 @@
 base-resource: https://example.org/catalog/1.0/
 default: night
 additional-formats:
-  application/vnd.custom.style+json: custom
+  - name: custom
+    media-type: application/vnd.custom.style+json
+    extension: custom.json
 styles:
   - id: "night"
     title: "Topographic night style"

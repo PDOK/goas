@@ -11,7 +11,7 @@ const (
 	StylesResource        = "styles"
 	StyleResource         = "styles/%s"
 	StyleMetadataResource = "styles/%s/metadata"
-	StylesPreviewResource = "resources/%s" // this is not clearly specified in the OGC API Styles spec, taken from the examples
+	ResourceResource      = "resources/%s" // this is not clearly specified in the OGC API Styles spec, taken from the examples
 )
 
 type LinkRelation string
@@ -20,7 +20,7 @@ type LinkRelations []LinkRelation
 // LinkRelation All known relations, not all are (as yet) used.
 //  Taken from: OGC API styles - 5.2
 const (
-	AlternateRelation       LinkRelation = "alternate"                                               // Refers to a substitute for this context.
+	AlternateRelation       LinkRelation = "alternate"                                               // Refers to a substitute for this context. (Refers to a substitute for this context [IANA]. Refers to a representation of the current resource which is encoded using another media type (the media type is specified in the type link attribute).)
 	CollectionRelation      LinkRelation = "collection"                                              // The target IRI points to a resource which represents the collection resource for the context IRI.
 	DescribedbyRelation     LinkRelation = "describedby"                                             // Metadata = Refers to a resource providing information about the link’s context.
 	EnclosureRelation       LinkRelation = "enclosure"                                               // Sample data = Identifies a related resource that is potentially large and might require special handling.
@@ -30,6 +30,7 @@ const (
 	ServiceDocRelation      LinkRelation = "service-doc"                                             // Identifies service documentation for the context that is primarily intended for human consumption.
 	StartRelation           LinkRelation = "start"                                                   // OGC API Features = Refers to the first resource in a collection of resources.
 	StylesheetRelation      LinkRelation = "stylesheet"                                              // Refers to a stylesheet.
+	PreloadRelation         LinkRelation = "preload"                                                 // Refers to a resource that should be loaded early in the processing of the link's context, without blocking rendering. E.g. Fonts or sprites
 	SchemaRelation          LinkRelation = "http://www.opengis.net/def/rel/ogc/1.0/schema"           // Refers to a schema that data has to conform to to be suitable for use with the link’s context. - (OGC API Styles - Recommendation 3A)
 	StylesRelation          LinkRelation = "http://www.opengis.net/def/rel/ogc/1.0/styles"           // Refers to a collection of styles.
 	ConformanceRelation     LinkRelation = "http://www.opengis.net/def/rel/ogc/1.0/conformance"      // Refers to resource that identifies the specifications that the link’s context conforms to.
@@ -58,8 +59,8 @@ func (linkRelation LinkRelation) ToPath(identifier string) (string, error) {
 		return fmt.Sprintf(StyleResource, identifier), nil
 	case DescribedbyRelation:
 		return fmt.Sprintf(StyleMetadataResource, identifier), nil
-	case PreviewRelation:
-		return fmt.Sprintf(StylesPreviewResource, identifier), nil
+	case PreviewRelation, PreloadRelation:
+		return fmt.Sprintf(ResourceResource, identifier), nil
 	default:
 		return "", fmt.Errorf("no path known for link relation: %s", linkRelation)
 	}
@@ -101,28 +102,36 @@ func (linkRelation *LinkRelation) UnmarshalYAML(unmarshal func(interface{}) erro
 }
 
 type MediaType string
-type Format string
 
 const (
 	JsonMediaType   MediaType = "application/json"
 	HtmlMediaType   MediaType = "text/html"
 	SldMediaType    MediaType = "application/vnd.ogc.sld+xml"
 	MapboxMediaType MediaType = "application/vnd.mapbox.style+json"
-
-	JsonFormat   Format = "json"
-	HtmlFormat   Format = "html"
-	SldFormat    Format = "sld"
-	MapboxFormat Format = "mapbox"
+	PngMediaType    MediaType = "image/png"
 
 	mediaTypeSeperator     = ";"
 	mediaTypePartSeperator = "="
+
+	formatQuery = "f=%s"
 )
 
-var knownFormats = map[MediaType]Format{
-	JsonMediaType:   JsonFormat,
-	HtmlMediaType:   HtmlFormat,
-	SldMediaType:    SldFormat,
-	MapboxMediaType: MapboxFormat,
+var (
+	JsonFormat       = Format{JsonMediaType, "json", "json"}
+	HtmlFormat       = Format{HtmlMediaType, "html", "html"}
+	SldFormat        = Format{SldMediaType, "sld", "sld"}
+	MapboxFormat     = Format{MapboxMediaType, "mapbox", "mapbox.json"}
+	PngFormat        = Format{PngMediaType, "png", "png"}
+	knownBaseFormats = []Format{JsonFormat, HtmlFormat, SldFormat, MapboxFormat, PngFormat}
+)
+
+func GetFormat(format string) (Format, bool) {
+	for _, knownFormat := range knownBaseFormats {
+		if knownFormat.Name == format {
+			return knownFormat, true
+		}
+	}
+	return Format{}, false
 }
 
 var versionRegex = regexp.MustCompile(`\d+`)
@@ -146,26 +155,31 @@ func (m MediaType) SplitParams() (MediaType, map[string]string) {
 	return root, params
 }
 
-func (m MediaType) ToFormat(additionalFormats map[MediaType]Format, versioned bool) Format {
+func (m MediaType) ToFormat(additionalFormats []Format, versioned bool) Format {
+	baseFormat := Format{}
 	root, params := m.SplitParams()
-	format, ok := knownFormats[root]
-	if !ok {
-		if additionalFormats == nil {
-			return ""
-		}
-		format, ok = additionalFormats[root]
-		if !ok {
-			return ""
+	for _, format := range append(knownBaseFormats, additionalFormats...) {
+		if root == format.MediaType {
+			baseFormat = format
+			break
 		}
 	}
+
 	if versioned {
 		version, ok := params["version"]
 		if ok {
 			versionDigits := strings.Join(versionRegex.FindAllString(version, -1), "")
-			format = Format(fmt.Sprintf("%s%s", format, versionDigits))
+			baseFormat.Name = fmt.Sprintf("%s%s", baseFormat.Name, versionDigits)
 		}
 	}
-	return format
+	return baseFormat
+}
+
+func (f Format) ToQuery() string {
+	if f.Name == "" {
+		return ""
+	}
+	return fmt.Sprintf(formatQuery, f.Name)
 }
 
 type GeometryType string

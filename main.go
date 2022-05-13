@@ -50,7 +50,7 @@ func main() {
 			Name:        "formats",
 			Usage:       "(stub) comma seperated list of rendered formats. Choose from: [json,]",
 			EnvVars:     []string{"API_FORMATS"},
-			DefaultText: string(models.JsonFormat),
+			DefaultText: models.JsonFormat.Name,
 		},
 	}
 	app.ArgsUsage = "[arguments]\n\nARGUMENTS:\n  [ASSET_DIR]: path that points to directory where the assets (styles, thumbnails) are provided\n  [CONFIG]: path to the configuration.yaml for the style generation"

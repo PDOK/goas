@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -32,6 +33,27 @@ func GenerateDocuments(ogcStyles *models.OGCStyles, assetDir string, formats []m
 	documents := make(models.Documents, documentChanSize)
 	go func() {
 		defer close(documents)
+		for _, additionalAsset := range ogcStyles.AdditionalAssets {
+			assetPathGlob := filepath.Join(assetDir, additionalAsset.Path)
+			assetPaths, err := filepath.Glob(assetPathGlob)
+			if err != nil {
+				documents.Add(nil, fmt.Errorf("cannot glob %s with error: %s", assetPathGlob, err))
+				return
+			}
+			for _, assetPath := range assetPaths {
+				relPath, err := filepath.Rel(assetDir, assetPath)
+				if err != nil {
+					documents.Add(nil, fmt.Errorf("cannot take the relative path of %s with error: %s", relPath, err))
+					return
+				}
+				link := models.Link{Rel: models.PreloadRelation, Type: &additionalAsset.MediaType, AssetFilename: &relPath}
+				document, err := generateAssetFromLinkRelation(link, "", assetDir, ogcStyles)
+				ok := documents.Add(document, err)
+				if !ok {
+					return
+				}
+			}
+		}
 		styles := models.Styles{Default: ogcStyles.Default}
 		for _, styleMetadata := range ogcStyles.StylesMetadata {
 			var stylesLinks []models.Link
@@ -87,7 +109,7 @@ func GenerateDocuments(ogcStyles *models.OGCStyles, assetDir string, formats []m
 }
 
 func generateStyleMetadata(styleMetadataLink *models.Link, metadataId string, assetDir string, styles *models.OGCStyles) (document *models.Document, link *models.Link, hasSelf bool, err error) {
-	err = styleMetadataLink.UpdateHref(styles.BaseResource, metadataId, styles.AdditionalFormats)
+	err = styleMetadataLink.UpdateHref(styles.BaseResource, metadataId, styles.AdditionalFormats, false, true)
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, styles.BaseResource, metadataId)
 	}
@@ -109,7 +131,7 @@ func generateStyleMetadata(styleMetadataLink *models.Link, metadataId string, as
 }
 
 func generateStylesheet(stylesheetLink *models.Link, metadataId string, assetDir string, styles *models.OGCStyles) (document *models.Document, err error) {
-	err = stylesheetLink.UpdateHref(styles.BaseResource, metadataId, styles.AdditionalFormats)
+	err = stylesheetLink.UpdateHref(styles.BaseResource, metadataId, styles.AdditionalFormats, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("error: %s could not update href with base url: %s and id: %s", err, styles.BaseResource, metadataId)
 	}
@@ -134,35 +156,41 @@ func generateMetadataLink(metadataId string, styles *models.OGCStyles) *models.L
 
 func generateAssetFromLinkRelation(link models.Link, styleId string, assetDir string, ogcStyles *models.OGCStyles) (*models.Document, error) {
 	switch link.Rel {
-	case models.StylesheetRelation, models.PreviewRelation:
-		if link.AssetFilename == nil {
-			return nil, fmt.Errorf("asset-filename not specified for stylesheet %s", *link.Href)
-		}
-		filename := *link.AssetFilename
-		assetPath := fmt.Sprintf("%s/%s", assetDir, filename)
-		assetContent, err := ioutil.ReadFile(assetPath)
-		if err != nil {
-			return nil, fmt.Errorf("could not find asset %s", assetPath)
-		}
+	case models.StylesheetRelation:
+		return generateAssetFromSource(link, styleId, assetDir, ogcStyles, true)
+	case models.PreviewRelation, models.PreloadRelation:
+		return generateAssetFromSource(link, *link.AssetFilename, assetDir, ogcStyles, false)
+	default:
+		log.Printf("not generating asset for link with relation %s, with href %s", link.Rel, *link.Href)
+		return nil, nil
+	}
+}
 
-		var contentBuffer bytes.Buffer
+func generateAssetFromSource(link models.Link, identifier string, assetDir string, ogcStyles *models.OGCStyles, useTemplate bool) (*models.Document, error) {
+	if link.AssetFilename == nil {
+		return nil, fmt.Errorf("asset-filename not specified for stylesheet %s", *link.Href)
+	}
+	filename := *link.AssetFilename
+	assetPath := fmt.Sprintf("%s/%s", assetDir, filename)
+	assetContent, err := ioutil.ReadFile(assetPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not find asset %s", assetPath)
+	}
+
+	var contentBuffer bytes.Buffer
+	if useTemplate {
 		assetTemplate := template.Must(template.New("assetTemplate").Parse(string(assetContent)))
 		err = assetTemplate.Execute(&contentBuffer, ogcStyles)
 		if err != nil {
 			return nil, fmt.Errorf("could not find format asset: %s", assetPath)
 		}
-
-		identifier := styleId
-		if link.Rel == models.PreviewRelation {
-			identifier = *link.AssetFilename
-		}
-		path, err := link.ToPath(identifier, ogcStyles.AdditionalFormats)
-		if err != nil {
-			return nil, err
-		}
-		return &models.Document{Path: path, MediaType: *link.Type, Content: &contentBuffer, Error: nil}, nil
-	default:
-		log.Printf("not generating asset for link with relation %s, with href %s", link.Rel, *link.Href)
-		return nil, nil
+	} else {
+		contentBuffer = *bytes.NewBuffer(assetContent)
 	}
+
+	path, err := link.ToPath(identifier, ogcStyles.AdditionalFormats)
+	if err != nil {
+		return nil, err
+	}
+	return &models.Document{Path: path, MediaType: *link.Type, Content: &contentBuffer, Error: nil}, nil
 }

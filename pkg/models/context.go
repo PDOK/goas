@@ -5,10 +5,16 @@ import (
 )
 
 type OGCStyles struct {
-	BaseResource      string               `yaml:"base-resource"`
-	Default           string               `yaml:"default,omitempty"`
-	AdditionalFormats map[MediaType]Format `yaml:"additional-formats,omitempty"`
-	StylesMetadata    []StyleMetadata      `yaml:"styles"`
+	BaseResource      string            `yaml:"base-resource"`
+	Default           string            `yaml:"default,omitempty"`
+	AdditionalFormats []Format          `yaml:"additional-formats,omitempty"`
+	AdditionalAssets  []AdditionalAsset `yaml:"additional-assets,omitempty"`
+	StylesMetadata    []StyleMetadata   `yaml:"styles"`
+}
+
+type AdditionalAsset struct {
+	Path      string    `yaml:"path"`
+	MediaType MediaType `yaml:"media-type"`
 }
 
 type Document struct {

@@ -47,13 +47,13 @@ func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType mode
 
 func (f FileWriter) makeDirIfNotExists(path string) error {
 	dir, _ := filepath.Split(path)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Mkdir(dir, os.ModePerm)
-		if err != nil {
-			return err
-		}
+	err := os.MkdirAll(dir, os.ModePerm)
+
+	if err == nil || os.IsExist(err) {
+		return nil
+	} else {
+		return err
 	}
-	return nil
 }
 
 func (f FileWriter) Write(path string, buffer *bytes.Buffer, _ models.MediaType) error {

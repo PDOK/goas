@@ -37,7 +37,7 @@ func TestGenerateDocuments(t *testing.T) {
 			bytes.NewBuffer([]byte("")),
 			nil},
 		{
-			"styles/night.mapbox",
+			"styles/night.mapbox.json",
 			"application/vnd.mapbox.style+json",
 			bytes.NewBuffer([]byte( //language=json
 				`{"MAPBOX_STYLE": "https://example.org/catalog/1.0"}`)),
@@ -49,7 +49,7 @@ func TestGenerateDocuments(t *testing.T) {
 				`<root href="https://example.org/catalog/1.0">SLD</root>`)),
 			nil},
 		{
-			"styles/night.custom",
+			"styles/night.custom.json",
 			"application/vnd.custom.style+json",
 			bytes.NewBuffer([]byte( //language=text
 				`Custom Style = https://example.org/catalog/1.0`)),
@@ -81,7 +81,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "specification": "https://docs.mapbox.com/mapbox-gl-js/style-spec/",
 					  "native": true,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night.mapbox",
+						"href": "https://example.org/catalog/1.0/styles/night?f=mapbox",
 						"rel": "stylesheet",
 						"type": "application/vnd.mapbox.style+json"
 					  }
@@ -91,7 +91,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "version": "1.0",
 					  "native": false,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night.sld10",
+						"href": "https://example.org/catalog/1.0/styles/night?f=sld10",
 						"rel": "stylesheet",
 						"type": "application/vnd.ogc.sld+xml;version=1.0"
 					  }
@@ -100,7 +100,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "title": "Custom Style",
 					  "native": true,
 					  "link": {
-						"href": "https://example.org/catalog/1.0/styles/night.custom",
+						"href": "https://example.org/catalog/1.0/styles/night?f=custom",
 						"rel": "stylesheet",
 						"type": "application/vnd.custom.style+json"
 					  }
@@ -128,7 +128,7 @@ func TestGenerateDocuments(t *testing.T) {
 				  ],
 				  "links": [
 					{
-					  "href": "https://example.org/catalog/1.0/resources/night",
+					  "href": "https://example.org/catalog/1.0/resources/night.png",
 					  "rel": "preview",
 					  "type": "image/png",
 					  "title": "thumbnail of the night style applied to OSM data from Daraa, Syria"
@@ -154,7 +154,7 @@ func TestGenerateDocuments(t *testing.T) {
 					  "title": "Topographic night style",
 					  "links": [
 						{
-						  "href": "https://example.org/catalog/1.0/resources/night",
+						  "href": "https://example.org/catalog/1.0/resources/night.png",
 						  "rel": "preview",
 						  "type": "image/png",
 						  "title": "thumbnail of the night style applied to OSM data from Daraa, Syria"
@@ -165,17 +165,17 @@ func TestGenerateDocuments(t *testing.T) {
 						  "title": "Style Metadata for night"
 						},
 						{
-						  "href": "https://example.org/catalog/1.0/styles/night.mapbox",
+						  "href": "https://example.org/catalog/1.0/styles/night?f=mapbox",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.mapbox.style+json"
 						},
 						{
-						  "href": "https://example.org/catalog/1.0/styles/night.sld10",
+						  "href": "https://example.org/catalog/1.0/styles/night?f=sld10",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.ogc.sld+xml;version=1.0"
 						},
 						{	
-						  "href": "https://example.org/catalog/1.0/styles/night.custom",
+						  "href": "https://example.org/catalog/1.0/styles/night?f=custom",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.custom.style+json"
 						}
