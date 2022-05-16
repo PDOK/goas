@@ -41,6 +41,11 @@ func main() {
 			Usage:   "S3 prefix where the styles land on S3 (optional)",
 			EnvVars: []string{"S3_PREFIX"},
 		},
+		&cli.BoolFlag{
+			Name:    "s3-secure",
+			Usage:   "use a secure S3 connection [true, false], defaults to false (optional)",
+			EnvVars: []string{"S3_SECURE"},
+		},
 		&cli.StringFlag{
 			Name:    "file-destination",
 			Usage:   "Path where the styles land on disk (optional)",
