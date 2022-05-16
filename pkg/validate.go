@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-func ValidateOGCStyles(ogcStyles *models.OGCStyles) error {
+func Validate(stylesConfig *models.StylesConfig) error {
 	var errors []string
-	err := validateUniqueStyles(ogcStyles)
+	err := validateUniqueStyles(stylesConfig)
 	if err != nil {
 		errors = append(errors, err.Error())
 	}
-	err = validateDefaultStyle(ogcStyles)
+	err = validateDefaultStyle(stylesConfig)
 	if err != nil {
 		errors = append(errors, err.Error())
 	}
-	for _, metadata := range ogcStyles.StylesMetadata {
+	for _, metadata := range stylesConfig.StylesMetadata {
 		err = validateStyleEncoding(metadata)
 		if err != nil {
 			errors = append(errors, err.Error())
@@ -30,10 +30,10 @@ func ValidateOGCStyles(ogcStyles *models.OGCStyles) error {
 }
 
 // validateUniqueStyles Requirement 3D: The id member of each style SHALL be unique.
-func validateUniqueStyles(ogcStyles *models.OGCStyles) error {
+func validateUniqueStyles(stylesConfig *models.StylesConfig) error {
 	var duplicateIds []string
 	styleSet := make(map[string]bool)
-	for _, metadata := range ogcStyles.StylesMetadata {
+	for _, metadata := range stylesConfig.StylesMetadata {
 		_, ok := styleSet[metadata.Id]
 		if !ok {
 			styleSet[metadata.Id] = true
@@ -58,13 +58,13 @@ func validateStyleEncoding(metadata models.StyleMetadata) error {
 }
 
 // validateDefaultStyle Requirement 3G: The default member SHALL, if provided, be the id of one of the styles in the styles array.
-func validateDefaultStyle(ogcStyles *models.OGCStyles) error {
-	for _, metadata := range ogcStyles.StylesMetadata {
-		if metadata.Id == ogcStyles.Default {
+func validateDefaultStyle(stylesConfig *models.StylesConfig) error {
+	for _, metadata := range stylesConfig.StylesMetadata {
+		if metadata.Id == stylesConfig.Default {
 			return nil
 		}
 	}
-	return fmt.Errorf("requirement 3G fails; default  %s not found in styles", ogcStyles.Default)
+	return fmt.Errorf("requirement 3G fails; default  %s not found in styles", stylesConfig.Default)
 }
 
 // TODO possible validation todos?:

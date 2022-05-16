@@ -83,7 +83,7 @@ func generate(ctx *util.Context) error {
 		return err
 	}
 
-	err = pkg.ValidateOGCStyles(config)
+	err = pkg.Validate(config)
 	if err != nil {
 		return err
 	}
@@ -92,9 +92,12 @@ func generate(ctx *util.Context) error {
 	if err != nil {
 		return err
 	}
-
+	writer, err := util.NewWriter(ctx)
+	if err != nil {
+		return err
+	}
 	for _, document := range documents {
-		err := ctx.Writer.Write(document.Path, document.Content, document.MediaType)
+		err = writer.Write(document.Path, document.Content, document.MediaType)
 		if err != nil {
 			return err
 		}

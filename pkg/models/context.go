@@ -4,7 +4,7 @@ import (
 	"bytes"
 )
 
-type OGCStyles struct {
+type StylesConfig struct {
 	BaseResource      string            `yaml:"base-resource"`
 	Default           string            `yaml:"default,omitempty"`
 	AdditionalFormats []Format          `yaml:"additional-formats,omitempty"`
