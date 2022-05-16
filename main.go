@@ -89,12 +89,15 @@ func generate(ctx *util.Context) error {
 	}
 
 	documents := pkg.GenerateDocuments(config, ctx.AssetDir, ctx.Formats)
-
+	writer, err := util.NewWriter(ctx)
+	if err != nil {
+		return err
+	}
 	for document := range documents {
 		if document.Error != nil { // TODO: not sure about this pattern, perhaps just implement Fatal logging; think about: https://stackoverflow.com/a/33890104
 			return document.Error
 		}
-		err := ctx.Writer.Write(document.Path, document.Content, document.MediaType)
+		err = writer.Write(document.Path, document.Content, document.MediaType)
 		if err != nil {
 			return err
 		}
