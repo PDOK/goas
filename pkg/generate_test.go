@@ -29,31 +29,29 @@ func TestParseConfig(t *testing.T) {
 
 func TestGenerateDocuments(t *testing.T) {
 	config, _ := ParseConfig("../examples/config.yaml")
-	documents := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
+	documents, err := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
+	require.Nil(t, err)
+
 	expectedDocuments := []models.Document{
 		{
 			"resources/thumbnail.png",
 			"image/png",
-			bytes.NewBuffer([]byte("")),
-			nil},
+			bytes.NewBuffer([]byte(""))},
 		{
 			"styles/night.mapbox.json",
 			"application/vnd.mapbox.style+json",
 			bytes.NewBuffer([]byte( //language=json
-				`{"MAPBOX_STYLE": "https://example.org/catalog/1.0"}`)),
-			nil},
+				`{"MAPBOX_STYLE": "https://example.org/catalog/1.0"}`))},
 		{
 			"styles/night.sld",
 			"application/vnd.ogc.sld+xml;version=1.0",
 			bytes.NewBuffer([]byte( //language=xml
-				`<root href="https://example.org/catalog/1.0">SLD</root>`)),
-			nil},
+				`<root href="https://example.org/catalog/1.0">SLD</root>`))},
 		{
 			"styles/night.custom.json",
 			"application/vnd.custom.style+json",
 			bytes.NewBuffer([]byte( //language=text
-				`Custom Style = https://example.org/catalog/1.0`)),
-			nil},
+				`Custom Style = https://example.org/catalog/1.0`))},
 		{
 			"styles/night/metadata.json",
 			"application/json",
@@ -140,8 +138,7 @@ func TestGenerateDocuments(t *testing.T) {
 					}
 				  ]
 				}`),
-			),
-			nil},
+			)},
 		{
 			"styles.json",
 			"application/json",
@@ -174,7 +171,7 @@ func TestGenerateDocuments(t *testing.T) {
 						  "rel": "stylesheet",
 						  "type": "application/vnd.ogc.sld+xml;version=1.0"
 						},
-						{	
+						{
 						  "href": "https://example.org/catalog/1.0/styles/night?f=custom",
 						  "rel": "stylesheet",
 						  "type": "application/vnd.custom.style+json"
@@ -182,21 +179,20 @@ func TestGenerateDocuments(t *testing.T) {
 					  ]
 					}
 				  ]
-				}`)),
-			nil},
+				}`))},
 	}
-	for _, expectedDocument := range expectedDocuments {
-		document := <-documents
-		require.Equal(t, expectedDocument.Path, document.Path)
-		require.Equal(t, expectedDocument.MediaType, document.MediaType)
-		require.Equal(t, bytesToComparableString(expectedDocument.Content), bytesToComparableString(document.Content))
-		require.Equal(t, expectedDocument.Error, document.Error)
+	for i, expectedDocument := range expectedDocuments {
+		require.Equal(t, expectedDocument.Path, documents[i].Path)
+		require.Equal(t, expectedDocument.MediaType, documents[i].MediaType)
+		require.Equal(t, bytesToComparableString(expectedDocument.Content), bytesToComparableString(documents[i].Content))
 	}
 }
 
 func TestGenerateDocumentsMinimalConfig(t *testing.T) {
 	config, _ := ParseConfig("../examples/minimal_config.yaml")
-	documents := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
+	documents, err := GenerateDocuments(config, "../examples/assets", []models.Format{models.JsonFormat})
+	require.Nil(t, err)
+
 	expectedDocuments := []models.Document{
 		{
 			"styles/night/metadata.json",
@@ -212,8 +208,7 @@ func TestGenerateDocumentsMinimalConfig(t *testing.T) {
 					    "title": "Style Metadata for night"
 					  }
 					]
-				}`)),
-			nil},
+				}`))},
 		{
 			"styles.json",
 			"application/json",
@@ -232,14 +227,11 @@ func TestGenerateDocumentsMinimalConfig(t *testing.T) {
 					  ]
 					}
 				  ]
-				}`)),
-			nil},
+				}`))},
 	}
-	for _, expectedDocument := range expectedDocuments {
-		document := <-documents
-		require.Equal(t, expectedDocument.Path, document.Path)
-		require.Equal(t, expectedDocument.MediaType, document.MediaType)
-		require.Equal(t, bytesToComparableString(expectedDocument.Content), bytesToComparableString(document.Content))
-		require.Equal(t, expectedDocument.Error, document.Error)
+	for i, expectedDocument := range expectedDocuments {
+		require.Equal(t, expectedDocument.Path, documents[i].Path)
+		require.Equal(t, expectedDocument.MediaType, documents[i].MediaType)
+		require.Equal(t, bytesToComparableString(expectedDocument.Content), bytesToComparableString(documents[i].Content))
 	}
 }
