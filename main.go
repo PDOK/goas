@@ -83,7 +83,7 @@ func generate(ctx *util.Context) error {
 		return err
 	}
 
-	err = pkg.ValidateOGCStyles(config)
+	err = pkg.Validate(config)
 	if err != nil {
 		return err
 	}

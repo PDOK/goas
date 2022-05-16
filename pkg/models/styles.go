@@ -6,18 +6,20 @@ import (
 	"strings"
 )
 
-// http://www.opengis.net/def/rel/ogc/1.0/styles: Refers to a collection of styles.
+// Styles based on OGC API Styles Requirement 3B -  http://www.opengis.net/def/rel/ogc/1.0/styles: Refers to a collection of styles.
 type Styles struct {
 	Default string  `json:"default,omitempty"`
 	Styles  []Style `json:"styles"`
 }
 
+// Style based on OGC API Styles Requirement 3B
 type Style struct {
 	Id    string `yaml:"id" json:"id"`
 	Title string `yaml:"title" json:"title,omitempty"`
 	Links []Link `yaml:"links" json:"links"` // minimally: style encoding ("rel": "stylesheet", "type": "application/vnd.mapbox.style+json" || "type": "application/vnd.ogc.sld+xml;version=1.0"), style metadata ("rel": "describedby"), optionally: thumbnail (rel": "preview", "type": "image/png")
 }
 
+// StyleMetadata based on OGC API Styles Requirement 7B
 type StyleMetadata struct {
 	Id             string       `yaml:"id" json:"id"`
 	Title          *string      `yaml:"title" json:"title,omitempty"`
@@ -40,6 +42,7 @@ type StyleMetadata struct {
 	Links []Link `yaml:"links" json:"links,omitempty"`
 }
 
+// StyleSheet based on OGC API Styles Requirement 7B
 type StyleSheet struct {
 	Title         *string `yaml:"title" json:"title,omitempty"`
 	Version       *string `yaml:"version" json:"version,omitempty"`
@@ -48,6 +51,7 @@ type StyleSheet struct {
 	Link          Link    `yaml:"link" json:"link"`
 }
 
+// Link based on OGC API Features - http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml - as referenced by OGC API Styles Requirements 3B and 7B
 type Link struct {
 	AssetFilename *string      `yaml:"asset-filename" json:"-"`
 	Href          *string      `yaml:"href" json:"href"`
