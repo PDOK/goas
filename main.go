@@ -41,6 +41,11 @@ func main() {
 			Usage:   "S3 prefix where the styles land on S3 (optional)",
 			EnvVars: []string{"S3_PREFIX"},
 		},
+		&cli.BoolFlag{
+			Name:    "s3-secure",
+			Usage:   "use a secure S3 connection [true, false], defaults to false (optional)",
+			EnvVars: []string{"S3_SECURE"},
+		},
 		&cli.StringFlag{
 			Name:    "file-destination",
 			Usage:   "Path where the styles land on disk (optional)",
@@ -50,7 +55,7 @@ func main() {
 			Name:        "formats",
 			Usage:       "(stub) comma seperated list of rendered formats. Choose from: [json,]",
 			EnvVars:     []string{"API_FORMATS"},
-			DefaultText: string(models.JsonFormat),
+			DefaultText: models.JsonFormat.Name,
 		},
 	}
 	app.ArgsUsage = "[arguments]\n\nARGUMENTS:\n  [ASSET_DIR]: path that points to directory where the assets (styles, thumbnails) are provided\n  [CONFIG]: path to the configuration.yaml for the style generation"
@@ -83,18 +88,21 @@ func generate(ctx *util.Context) error {
 		return err
 	}
 
-	err = pkg.ValidateOGCStyles(config)
+	err = pkg.Validate(config)
 	if err != nil {
 		return err
 	}
 
 	documents := pkg.GenerateDocuments(config, ctx.AssetDir, ctx.Formats)
-
+	writer, err := util.NewWriter(ctx)
+	if err != nil {
+		return err
+	}
 	for document := range documents {
 		if document.Error != nil { // TODO: not sure about this pattern, perhaps just implement Fatal logging; think about: https://stackoverflow.com/a/33890104
 			return document.Error
 		}
-		err := ctx.Writer.Write(document.Path, document.Content, document.MediaType)
+		err = writer.Write(document.Path, document.Content, document.MediaType)
 		if err != nil {
 			return err
 		}

@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -11,7 +10,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type Writer interface {
@@ -47,13 +45,13 @@ func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType mode
 
 func (f FileWriter) makeDirIfNotExists(path string) error {
 	dir, _ := filepath.Split(path)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Mkdir(dir, os.ModePerm)
-		if err != nil {
-			return err
-		}
+	err := os.MkdirAll(dir, os.ModePerm)
+
+	if err == nil || os.IsExist(err) {
+		return nil
+	} else {
+		return err
 	}
-	return nil
 }
 
 func (f FileWriter) Write(path string, buffer *bytes.Buffer, _ models.MediaType) error {
@@ -79,10 +77,10 @@ func (f FileWriter) Write(path string, buffer *bytes.Buffer, _ models.MediaType)
 	return nil
 }
 
-func newMinioWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s3Bucket string, s3Prefix string) (Writer, error) {
+func newMinioWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s3Bucket string, s3Prefix string, s3Secure bool) (Writer, error) {
 	minioClient, err := minio.New(s3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
-		Secure: false,
+		Secure: s3Secure,
 	})
 	if err != nil {
 		return nil, err
@@ -95,20 +93,11 @@ func newMinioWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s
 	}, nil
 }
 
-func NewWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s3Bucket string, s3Prefix string, fileDestination string) (writer Writer, err error) {
-	isLocal := fileDestination != ""
-	isS3 := s3Endpoint != "" && s3SecretKey != "" && s3Bucket != "" && s3AccessKey != "" && s3Prefix != ""
-	if (isS3 && isLocal) || (!isS3 && !isLocal) {
-		return nil, errors.New("provide either valid S3 configuration, or a local file destination")
-	}
-
-	if isLocal {
-		writer = &FileWriter{fileDestination}
+func NewWriter(ctx *Context) (writer Writer, err error) {
+	if ctx.isLocal {
+		writer = &FileWriter{*ctx.FileDestination}
 	} else {
-		if !strings.HasSuffix(s3Prefix, "/") {
-			s3Prefix = s3Prefix + "/"
-		}
-		writer, err = newMinioWriter(s3Endpoint, s3AccessKey, s3SecretKey, s3Bucket, s3Prefix)
+		writer, err = newMinioWriter(ctx.S3.Endpoint, ctx.S3.AccessKey, ctx.S3.SecretKey, ctx.S3.Bucket, ctx.S3.Prefix, ctx.S3.Secure)
 		if err != nil {
 			return nil, err
 		}

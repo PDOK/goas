@@ -11,8 +11,8 @@ import (
 type Renderer func(obj interface{}, path string) (*models.Document, error)
 
 func Render(obj interface{}, path string, format models.Format) (*models.Document, error) {
-	if !strings.HasSuffix(path, string(format)) {
-		path = fmt.Sprintf("%s.%s", path, format)
+	if !strings.HasSuffix(path, format.Extension) {
+		path = fmt.Sprintf("%s.%s", path, format.Extension)
 	}
 	renderer, err := getRenderer(format)
 	if err != nil {
