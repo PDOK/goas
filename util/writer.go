@@ -77,10 +77,10 @@ func (f FileWriter) Write(path string, buffer *bytes.Buffer, _ models.MediaType)
 	return nil
 }
 
-func newMinioWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s3Bucket string, s3Prefix string) (Writer, error) {
+func newMinioWriter(s3Endpoint string, s3AccessKey string, s3SecretKey string, s3Bucket string, s3Prefix string, s3Secure bool) (Writer, error) {
 	minioClient, err := minio.New(s3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s3AccessKey, s3SecretKey, ""),
-		Secure: false,
+		Secure: s3Secure,
 	})
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func NewWriter(ctx *Context) (writer Writer, err error) {
 	if ctx.isLocal {
 		writer = &FileWriter{*ctx.FileDestination}
 	} else {
-		writer, err = newMinioWriter(ctx.S3.Endpoint, ctx.S3.AccessKey, ctx.S3.SecretKey, ctx.S3.Bucket, ctx.S3.Prefix)
+		writer, err = newMinioWriter(ctx.S3.Endpoint, ctx.S3.AccessKey, ctx.S3.SecretKey, ctx.S3.Bucket, ctx.S3.Prefix, ctx.S3.Secure)
 		if err != nil {
 			return nil, err
 		}

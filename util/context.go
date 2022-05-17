@@ -14,6 +14,7 @@ type S3Context struct {
 	SecretKey string
 	Bucket    string
 	Prefix    string
+	Secure    bool
 }
 
 type Context struct {
@@ -33,6 +34,7 @@ func CreateContext(c *cli.Context) (*Context, error) {
 	s3SecretKey := c.String("s3-secret")
 	s3Bucket := c.String("s3-bucket")
 	s3Prefix := c.String("s3-prefix")
+	s3Secure := c.Bool("s3-secure")
 	fileDestination := c.String("file-destination")
 
 	isLocal := fileDestination != ""
@@ -49,7 +51,7 @@ func CreateContext(c *cli.Context) (*Context, error) {
 		if !strings.HasSuffix(s3Prefix, "/") {
 			s3Prefix = s3Prefix + "/"
 		}
-		s3Context = S3Context{s3Endpoint, s3AccessKey, s3SecretKey, s3Bucket, s3Prefix}
+		s3Context = S3Context{s3Endpoint, s3AccessKey, s3SecretKey, s3Bucket, s3Prefix, s3Secure}
 	}
 
 	var assetDir, configPath string
