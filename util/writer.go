@@ -30,7 +30,7 @@ type FileWriter struct {
 func (m MinioWriter) Write(filename string, buffer *bytes.Buffer, mediaType models.MediaType) error {
 	key := m.s3Prefix + filename
 	var opts minio.PutObjectOptions
-	if mediaType == "" {
+	if mediaType != "" {
 		opts = minio.PutObjectOptions{ContentType: string(mediaType)}
 	} else {
 		opts = minio.PutObjectOptions{}
