@@ -13,8 +13,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const documentChanSize = 5
-
 func ParseConfig(configPath string) (*models.StylesConfig, error) {
 	var config models.StylesConfig
 	content, err := ioutil.ReadFile(configPath)
@@ -29,83 +27,78 @@ func ParseConfig(configPath string) (*models.StylesConfig, error) {
 	return &config, nil
 }
 
-func GenerateDocuments(stylesConfig *models.StylesConfig, assetDir string, formats []models.Format) chan *models.Document {
-	documents := make(models.Documents, documentChanSize)
-	go func() {
-		defer close(documents)
-		for _, additionalAsset := range stylesConfig.AdditionalAssets {
-			assetPathGlob := filepath.Join(assetDir, additionalAsset.Path)
-			assetPaths, err := filepath.Glob(assetPathGlob)
+func GenerateDocuments(stylesConfig *models.StylesConfig, assetDir string, formats []models.Format) ([]models.Document, error) {
+	var documents []models.Document
+	for _, additionalAsset := range stylesConfig.AdditionalAssets {
+		assetPathGlob := filepath.Join(assetDir, additionalAsset.Path)
+		assetPaths, err := filepath.Glob(assetPathGlob)
+		if err != nil {
+			return nil, fmt.Errorf("cannot glob %s with error: %s", assetPathGlob, err)
+		}
+		for _, assetPath := range assetPaths {
+			relPath, err := filepath.Rel(assetDir, assetPath)
 			if err != nil {
-				documents.Add(nil, fmt.Errorf("cannot glob %s with error: %s", assetPathGlob, err))
-				return
+				return nil, fmt.Errorf("cannot take the relative path of %s with error: %s", relPath, err)
 			}
-			for _, assetPath := range assetPaths {
-				relPath, err := filepath.Rel(assetDir, assetPath)
-				if err != nil {
-					documents.Add(nil, fmt.Errorf("cannot take the relative path of %s with error: %s", relPath, err))
-					return
-				}
-				link := models.Link{Rel: models.PreloadRelation, Type: &additionalAsset.MediaType, AssetFilename: &relPath}
-				document, err := generateAssetFromLinkRelation(link, "", assetDir, stylesConfig)
-				ok := documents.Add(document, err)
-				if !ok {
-					return
-				}
+			link := models.Link{Rel: models.PreloadRelation, Type: &additionalAsset.MediaType, AssetFilename: &relPath}
+			document, err := generateAssetFromLinkRelation(link, "", assetDir, stylesConfig)
+			if err != nil {
+				return nil, err
+			}
+			documents = append(documents, *document)
+		}
+	}
+	styles := models.Styles{Default: stylesConfig.Default}
+	for _, styleMetadata := range stylesConfig.StylesMetadata {
+		var stylesLinks []models.Link
+		var selfMetadataLink *models.Link
+		for i := range styleMetadata.Links {
+			document, link, isSelf, err := generateStyleMetadata(&styleMetadata.Links[i], styleMetadata.Id, assetDir, stylesConfig)
+			if err != nil {
+				return nil, err
+			}
+			documents = append(documents, *document)
+			stylesLinks = append(stylesLinks, *link)
+			if isSelf {
+				selfMetadataLink = link
 			}
 		}
-		styles := models.Styles{Default: stylesConfig.Default}
-		for _, styleMetadata := range stylesConfig.StylesMetadata {
-			var stylesLinks []models.Link
-			var selfMetadataLink *models.Link
-			for i := range styleMetadata.Links {
-				document, link, isSelf, err := generateStyleMetadata(&styleMetadata.Links[i], styleMetadata.Id, assetDir, stylesConfig)
-				ok := documents.Add(document, err)
-				if !ok {
-					return
-				}
-				stylesLinks = append(stylesLinks, *link)
-				if isSelf {
-					selfMetadataLink = link
-				}
-			}
 
-			if selfMetadataLink == nil {
-				selfMetadataLink = generateMetadataLink(styleMetadata.Id, stylesConfig)
-				styleMetadata.Links = append(styleMetadata.Links, *selfMetadataLink)
-				// OGC API Styles Requirement 3F Each style SHALL have a link to the style metadata (link relation type: describedby) with the type attribute stating the media type of the metadata encoding.
-				stylesLinks = append(stylesLinks, *selfMetadataLink.WithOtherRelation(models.DescribedbyRelation))
-			}
-			for i := range styleMetadata.Stylesheets {
-				document, err := generateStylesheet(&styleMetadata.Stylesheets[i].Link, styleMetadata.Id, assetDir, stylesConfig)
-				ok := documents.Add(document, err)
-				if !ok {
-					return
-				}
-				// OGC API Styles Requirement 3C - The styles member SHALL include one item for each style currently on the server.
-				stylesLinks = append(stylesLinks, styleMetadata.Stylesheets[i].Link)
-			}
-
-			styles.Styles = append(styles.Styles, models.Style{
-				Id: styleMetadata.Id, Title: *styleMetadata.Title, Links: stylesLinks,
-			})
-			for _, format := range formats {
-				document, err := Render(styleMetadata, models.DescribedbyRelation.MustToPath(styleMetadata.Id), format)
-				ok := documents.Add(document, err)
-				if !ok {
-					return
-				}
-			}
+		if selfMetadataLink == nil {
+			selfMetadataLink = generateMetadataLink(styleMetadata.Id, stylesConfig)
+			styleMetadata.Links = append(styleMetadata.Links, *selfMetadataLink)
+			// OGC API Styles Requirement 3F Each style SHALL have a link to the style metadata (link relation type: describedby) with the type attribute stating the media type of the metadata encoding.
+			stylesLinks = append(stylesLinks, *selfMetadataLink.WithOtherRelation(models.DescribedbyRelation))
 		}
+		for i := range styleMetadata.Stylesheets {
+			document, err := generateStylesheet(&styleMetadata.Stylesheets[i].Link, styleMetadata.Id, assetDir, stylesConfig)
+			if err != nil {
+				return nil, err
+			}
+			documents = append(documents, *document)
+			// OGC API Styles Requirement 3C - The styles member SHALL include one item for each style currently on the server.
+			stylesLinks = append(stylesLinks, styleMetadata.Stylesheets[i].Link)
+		}
+
+		styles.Styles = append(styles.Styles, models.Style{
+			Id: styleMetadata.Id, Title: *styleMetadata.Title, Links: stylesLinks,
+		})
 		for _, format := range formats {
-			document, err := Render(styles, models.StylesResource, format)
-			ok := documents.Add(document, err)
-			if !ok {
-				return
+			document, err := Render(styleMetadata, models.DescribedbyRelation.MustToPath(styleMetadata.Id), format)
+			if err != nil {
+				return nil, err
 			}
+			documents = append(documents, *document)
 		}
-	}()
-	return documents
+	}
+	for _, format := range formats {
+		document, err := Render(styles, models.StylesResource, format)
+		if err != nil {
+			return nil, err
+		}
+		documents = append(documents, *document)
+	}
+	return documents, nil
 }
 
 func generateStyleMetadata(styleMetadataLink *models.Link, metadataId string, assetDir string, styles *models.StylesConfig) (document *models.Document, link *models.Link, hasSelf bool, err error) {
@@ -192,5 +185,5 @@ func generateAssetFromSource(link models.Link, identifier string, assetDir strin
 	if err != nil {
 		return nil, err
 	}
-	return &models.Document{Path: path, MediaType: *link.Type, Content: &contentBuffer, Error: nil}, nil
+	return &models.Document{Path: path, MediaType: *link.Type, Content: &contentBuffer}, nil
 }

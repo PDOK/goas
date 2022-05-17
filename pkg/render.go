@@ -42,5 +42,5 @@ func jsonRenderer(obj interface{}, path string) (*models.Document, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error: %v, could not render document to file", err)
 	}
-	return &models.Document{Path: path, MediaType: models.JsonMediaType, Content: content, Error: nil}, nil
+	return &models.Document{Path: path, MediaType: models.JsonMediaType, Content: content}, nil
 }
