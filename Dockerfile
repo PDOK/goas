@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine3.15 AS build
+FROM golang:1.19-alpine3.16 AS build
 
 # Create and change to the build directory.
 WORKDIR /build
@@ -18,7 +18,7 @@ ENV CGO_ENABLED=0
 ENV GOOS=linux
 
 RUN CGO_ENABLED=0 go build
-RUN go test ./...
+RUN go test -short ./...
 
 FROM scratch
 

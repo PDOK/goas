@@ -17,41 +17,46 @@ type S3Context struct {
 	Secure    bool
 }
 
-type Context struct {
-	S3              *S3Context
-	FileDestination *string
-	isLocal         bool
-	AssetDir        string
-	ConfigPath      string
-	Formats         []models.Format
+type AzureBlobContext struct {
+	ConnectionString string
+	Container        string
+	Prefix           string
 }
+
+type Context struct {
+	S3                 *S3Context
+	AzureBlob          *AzureBlobContext
+	FileDestination    *string
+	StorageDestination StorageDestination
+	AssetDir           string
+	ConfigPath         string
+	Formats            []models.Format
+}
+
+type StorageDestination string
+
+const (
+	FILE       StorageDestination = "FILE"
+	S3         StorageDestination = "S3"
+	AZURE_BLOB StorageDestination = "AZURE_BLOB"
+)
 
 var DefaultFormats = []models.Format{models.JsonFormat}
 
 func CreateContext(c *cli.Context) (*Context, error) {
-	s3Endpoint := c.String("s3-endpoint")
-	s3AccessKey := c.String("s3-access-key")
-	s3SecretKey := c.String("s3-secret")
-	s3Bucket := c.String("s3-bucket")
-	s3Prefix := c.String("s3-prefix")
-	s3Secure := c.Bool("s3-secure")
-	fileDestination := c.String("file-destination")
-
-	isLocal := fileDestination != ""
-	isS3 := s3Endpoint != "" && s3SecretKey != "" && s3Bucket != "" && s3AccessKey != "" && s3Prefix != ""
-	if (isS3 && isLocal) || (!isS3 && !isLocal) {
-		return nil, errors.New("provide either valid S3 configuration, or a local file destination")
-	}
-
-	var s3Context S3Context
-	var fileDest *string
-	if isLocal {
-		fileDest = &fileDestination
-	} else {
-		if !strings.HasSuffix(s3Prefix, "/") {
-			s3Prefix = s3Prefix + "/"
-		}
-		s3Context = S3Context{s3Endpoint, s3AccessKey, s3SecretKey, s3Bucket, s3Prefix, s3Secure}
+	storageDest, fileDest, s3Context, azureBlobContext, err := initStorage(
+		c.String("file-destination"),
+		c.String("s3-endpoint"),
+		c.String("s3-secret"),
+		c.String("s3-bucket"),
+		c.String("s3-access-key"),
+		c.String("s3-prefix"),
+		c.Bool("s3-secure"),
+		c.String("azure-storage-connection-string"),
+		c.String("azure-storage-container"),
+		c.String("azure-storage-blobs-prefix"))
+	if err != nil {
+		return nil, err
 	}
 
 	var assetDir, configPath string
@@ -75,5 +80,36 @@ func CreateContext(c *cli.Context) (*Context, error) {
 		formats = DefaultFormats
 	}
 
-	return &Context{&s3Context, fileDest, isLocal, assetDir, configPath, formats}, nil
+	return &Context{&s3Context, &azureBlobContext, fileDest,
+		storageDest, assetDir, configPath, formats}, nil
+}
+
+func initStorage(fileDestination string, s3Endpoint string, s3SecretKey string, s3Bucket string,
+	s3AccessKey string, s3Prefix string, s3Secure bool, azureConnectionString string,
+	azureContainer string, azurePrefix string) (StorageDestination, *string, S3Context, AzureBlobContext, error) {
+
+	var s3Context S3Context
+	var azureBlobContext AzureBlobContext
+	var fileDest *string
+
+	var storageDestination StorageDestination
+	if fileDestination != "" {
+		storageDestination = FILE
+		fileDest = &fileDestination
+	} else if s3Endpoint != "" && s3SecretKey != "" && s3Bucket != "" && s3AccessKey != "" && s3Prefix != "" {
+		storageDestination = S3
+		if !strings.HasSuffix(s3Prefix, "/") {
+			s3Prefix = s3Prefix + "/"
+		}
+		s3Context = S3Context{s3Endpoint, s3AccessKey, s3SecretKey, s3Bucket, s3Prefix, s3Secure}
+	} else if azureConnectionString != "" && azureContainer != "" && azurePrefix != "" {
+		storageDestination = AZURE_BLOB
+		if !strings.HasSuffix(azurePrefix, "/") {
+			azurePrefix = azurePrefix + "/"
+		}
+		azureBlobContext = AzureBlobContext{azureConnectionString, azureContainer, azurePrefix}
+	} else {
+		return "", nil, S3Context{}, AzureBlobContext{}, errors.New("provide either a valid file destination, S3 config or Azure Blob config")
+	}
+	return storageDestination, fileDest, s3Context, azureBlobContext, nil
 }
