@@ -13,7 +13,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "Go OGC Api Styles Generator"
-	app.Usage = "Generates OGC API styles to S3 or disk"
+	app.Usage = "Generates OGC API styles to local disk or remote object storage (S3 or Azure Blob)"
 
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
@@ -45,6 +45,21 @@ func main() {
 			Name:    "s3-secure",
 			Usage:   "use a secure S3 connection [true, false], defaults to false (optional)",
 			EnvVars: []string{"S3_SECURE"},
+		},
+		&cli.StringFlag{
+			Name:    "azure-storage-connection-string",
+			Usage:   "connection string to Azure Blob storage (optional)",
+			EnvVars: []string{"AZURE_STORAGE_CONNECTION_STRING"},
+		},
+		&cli.StringFlag{
+			Name:    "azure-storage-container",
+			Usage:   "name of Azure Blob storage container (optional)",
+			EnvVars: []string{"AZURE_STORAGE_CONTAINER"},
+		},
+		&cli.StringFlag{
+			Name:    "azure-storage-blobs-prefix",
+			Usage:   "Azure Blob key prefix (optional)",
+			EnvVars: []string{"BLOBS_PREFIX"},
 		},
 		&cli.StringFlag{
 			Name:    "file-destination",

@@ -10,7 +10,7 @@ here](http://docs.opengeospatial.org/DRAFTS/20-009.html)) static documents in
 golang. GOAS generates the static files with paths conforming to this spec, and
 thus implements the read only aspects of the OGC Styles API. The documents are
 generated from a `yaml` config which mirrors the style metadata [like
-so](#how-to-configure)
+so](#how-to-configure). Output is written to either local file, S3 or Azure Blob storage.
 
 Conformance:
 
@@ -31,7 +31,6 @@ Implemented:
 ### Wishlist / TODO
 
 - [ ] Implement OGC API spec for layers
-- [ ] Azure BlobStore
 - [ ] Move beyond json rendering
 
 ## How to run
@@ -60,9 +59,9 @@ go test ./...
 Goas supports config options as flags and environment variables (see the
 [$VALUES] below) and expects a [config yaml](#how-to-configure)
 
-```bash
+```
 NAME:
-   Go OGC Api Styles Generator - Generates OGC API styles to S3 or disk
+   Go OGC Api Styles Generator - Generates OGC API styles to local disk or remote object storage (S3 or Azure Blob)
 
 USAGE:
    goas [global options] command [command options] [arguments]
@@ -75,21 +74,26 @@ COMMANDS:
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --s3-access-key value     S3 access key (optional) [$S3_ACCESS_KEY]
-   --s3-secret value         S3 secret key (optional) [$S3_SECRET_KEY]
-   --s3-endpoint value       s3 endpoint with protocol (optional) [$S3_ENDPOINT]
-   --s3-bucket value         S3 bucket where the styles land on S3 (optional) [$S3_BUCKET]
-   --s3-prefix value         S3 prefix where the styles land on S3 (optional) [$S3_PREFIX]
-   --file-destination value  Path where the styles land on disk (optional) [$FILE_DESTINATION]
-   --formats value           (stub) comma seperated list of rendered formats. Choose from: [json,] (default: json) [$API_FORMATS]
-   --help, -h                show help (default: false)
+   --s3-access-key value                    S3 access key (optional) [$S3_ACCESS_KEY]
+   --s3-secret value                        S3 secret key (optional) [$S3_SECRET_KEY]
+   --s3-endpoint value                      s3 endpoint with protocol (optional) [$S3_ENDPOINT]
+   --s3-bucket value                        S3 bucket where the styles land on S3 (optional) [$S3_BUCKET]
+   --s3-prefix value                        S3 prefix where the styles land on S3 (optional) [$S3_PREFIX]
+   --s3-secure                              use a secure S3 connection [true, false], defaults to false (optional) (default: false) [$S3_SECURE]
+   --azure-storage-connection-string value  connection string to Azure Blob storage (optional) [$AZURE_STORAGE_CONNECTION_STRING]
+   --azure-storage-container value          name of Azure Blob storage container (optional) [$AZURE_STORAGE_CONTAINER]
+   --azure-storage-blobs-prefix value       Azure Blob key prefix (optional) [$BLOBS_PREFIX]
+   --file-destination value                 Path where the styles land on disk (optional) [$FILE_DESTINATION]
+   --formats value                          (stub) comma seperated list of rendered formats. Choose from: [json,] (default: json) [$API_FORMATS]
+   --help, -h                               show help (default: false)
+
 ```
 
 #### How to configure
 
 The main config expects:
 
-```bash
+```
 base-resource:      the url that is prepended to each enpdoint (required)
 default:            the default style (optional)
 additional-formats: key value pairs of custom formats (optional)
